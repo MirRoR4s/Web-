@@ -1,5 +1,0 @@
-Manifest-Version: 1.0
-Built-By: mirror
-Created-By: IntelliJ IDEA
-Build-Jdk: Oracle OpenJDK version 1.8.0_341
-
