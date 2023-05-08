@@ -27,7 +27,9 @@ __del__：析构函数，在对象销毁时被调用
 
 ![image-20230505115455522](picture/image-20230505115455522.png)
 
-官方文档说 \_\_mro\_\_ 属性是一个类的元组，是什么类呢？是在方法解析期间寻找基类时所考虑的类。这样看来有些抽象，我在[此处](https://cloud.tencent.com/developer/article/1741952)找到了一个比较好的回答。看完这篇文章后对 mro 方法是做什么的、结果是咋样的会有一个清晰的了解，如果说要想明白 mro 是如何做的呢？可以参看[知乎](https://www.zhihu.com/tardis/zm/art/416584599?source_id=1003)的这篇文章。
+官方文档说 \_\_mro\_\_ 属性是一个类的元组，是什么类呢？是在方法解析期间寻找基类时所考虑的类。这样看来有些抽象，我在[此处](https://cloud.tencent.com/developer/article/1741952)找到了一个比较好的回答。看完这篇文章后对 mro 方法是做什么的、结果是咋样的会有一个清晰的了解。
+
+- 如果说要想明白 mro 是如何做的呢？可以参看[知乎](https://www.zhihu.com/tardis/zm/art/416584599?source_id=1003)的这篇文章。
 
 ### \_\_class\_\_
 
@@ -41,3 +43,59 @@ __del__：析构函数，在对象销毁时被调用
 ### \_\_globals\_\_
 
 参看[官方文档](https://docs.python.org/3/reference/datamodel.html?highlight=__globals__)
+
+## Python 函数
+
+### vars()
+
+- https://www.runoob.com/python/python-func-vars.html
+
+![image-20230508162827640](picture/image-20230508162827640.png)
+
+这个函数会以字典的形式返回对象的属性和属性值，注意**类对象的函数也算作属性**。
+
+```python
+class Runoob:
+    a = 1
+    def test(self):
+        print(1)
+
+print(vars(Runoob))
+#{'__module__': '__main__', 'a': 1, 'test': <function Runoob.test at 0x000001DF676D68C0>, '__dict__': <attribute '__dict__' of 'Runoob' objects>, '__weakref__': <attribute '__weakref__' of 'Runoob' objects>, '__doc__': None}
+```
+
+
+
+## Python 特性
+
+### Python 中的 [:-1] 和 [::-1]
+
+- 参考[菜鸟教程](https://www.runoob.com/note/51257)
+
+```python
+b = a[i:j]   # 表示复制 a[i] 到 a[j-1]，以生成新的 list 对象
+
+a = [0,1,2,3,4,5,6,7,8,9]
+b = a[1:3]   # [1,2]
+
+# 当 i 缺省时，默认为 0，即 a[:3] 相当于 a[0:3]
+# 当 j 缺省时，默认为 len(alist), 即 a[1:] 相当于 a[1:10]
+# 当 i,j 都缺省时，a[:] 就相当于完整复制一份 a
+
+b = a[i:j:s]    # 表示：i,j与上面的一样，但 s 表示步进，缺省为 1.
+# 所以 a[i:j:1] 相当于 a[i:j]
+
+# 当 s<0 时，i 缺省时，默认为 -1. j 缺省时，默认为 -len(a)-1
+# 所以 a[::-1] 相当于 a[-1:-len(a)-1:-1]，也就是从最后一个元素到第一个元素复制一遍，即倒序。
+```
+
+- 当 s 大于零时，i 缺省，默认为 0，j 缺省时，默认为 len(a)
+
+所以 a[::2] == a[0,len(a),2]
+
+
+
+
+
+
+

