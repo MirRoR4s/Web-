@@ -1,16 +1,14 @@
 # Nosql 注入
 
-## 简介
+## 0x00 简介
 
-Nosql 注入由于 Nosql 本身的特性和传统的 SQL 注入有所区别。使用传统的 SQL 注入，攻击者利用不安全的用户输入来修改或替换应用程序发送到数据库引擎的 SQL 查询语句（或其他 SQL 语句）。
+Nosql 注入由于 Nosql 本身的特性和传统的 SQL 注入有所区别。传统的 SQL 注入中，攻击者利用不安全的用户输入来修改或替换应用程序发送到数据库引擎的 SQL 查询语句（或其他 SQL 语句）。换句话说，SQL 注入可以使攻击者在数据库中执行 SQL 命令。
 
-换句话说，SQL 注入可以使攻击者在数据库中执行 SQL 命令。
+与关系型数据库不同，Nosql 数据库不使用通用查询语言。
 
-与关系数据库不同，Nosql 数据库不适用通用查询语言。
+- 什么是通用查询语言？暂时跳过！
 
-- 什么是通用查询语言？
-
-Nosql 查询语法是特定于产品的，查询是使用应用程序的编程语言编写的：PHP、JS、Python、Java 等。这意味着成功的注入不仅可以使攻击者在数据库中执行命令，而且可以在应用程序中执行命令，这可能更加危险。
+Nosql 查询语法是特定于产品的，查询是使用应用程序的编程语言编写的：PHP、JS、Python、Java 等。这意味着成功的注入不仅可以使攻击者在数据库中执行命令，还可以在应用程序中执行命令，这可能更加危险。
 
 以下是 OWASP 对于 Nosql 注入的介绍：
 
@@ -20,7 +18,7 @@ Nosql 查询语法是特定于产品的，查询是使用应用程序的编程�
 
 ![image-20230513181426004](picture/image-20230513181426004.png)
 
-## Nosql 注入的分类
+## 0x01 Nosql 注入的分类
 
 有两种 Nosql 注入的分类方式：
 
@@ -41,11 +39,11 @@ MongoDB Server 支持 JavaScript，这使得在数据引擎进行复杂事务和
 
 - **盲注**
 
-当页面没有回显时，那么我们可以通过 `$regex` 来达到和传统的 sql 注入中 `substr()` 函数相同的功能，而且 NoSQL 用到的基本都是布尔盲注。
+当页面没有回显时，那么我们可以通过 `$regex` 来达到和传统的 sql 注入中 `substr()` 函数相同的功能，而且 NoSQL 用到的基本都是**布尔盲注**。
 
 下面我们通过 PHP 和 NodeJS 来讲解 MongoDB 注入的利用方式。
 
-## PHP 中的 MongoDB 注入
+## 0x02 PHP 中的 MongoDB 注入
 
 测试环境如下：
 
@@ -53,11 +51,11 @@ MongoDB Server 支持 JavaScript，这使得在数据引擎进行复杂事务和
 - PHP 7.4.21
 - MongoDB Server 4.4.7
 
-在 PHP 中使用 MongoDB 你必须使用 MongoDB 的 [PHP 驱动](https://pecl.php.net/package/mongodb) 。这里我们使用新版的 PHP 驱动来操作 MongoDB。
+在 PHP 中使用 MongoDB 必须使用 MongoDB 的 [PHP 驱动](https://pecl.php.net/package/mongodb) 。这里我们使用新版的 PHP 驱动来操作 MongoDB。
 
 以下实例均以 POST 请求方式为例。
 
-### 重言式注入
+### 2.1 重言式注入
 
 首先在 MongoDB 中选中 test 数据库，创建一个 users 集合并插入文档数据：
 
