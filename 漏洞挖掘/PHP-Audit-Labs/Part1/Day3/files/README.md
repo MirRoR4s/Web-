@@ -1,9 +1,3 @@
-本文由红日安全成员： **七月火** 编写，如有不当，还望斧正。
-
-## 前言
-
-大家好，我们是红日安全-代码审计小组。最近我们小组正在做一个PHP代码审计的项目，供大家学习交流，我们给这个项目起了一个名字叫 **PHP-Audit-Labs** 。现在大家所看到的系列文章，属于项目 **第一阶段** 的内容，本阶段的内容题目均来自 [PHP SECURITY CALENDAR 2017](https://www.ripstech.com/php-security-calendar-2017/) 。对于每一道题目，我们均给出对应的分析，并结合实际CMS进行解说。在文章的最后，我们还会留一道CTF题目，供大家练习，希望大家喜欢。下面是 **第3篇** 代码审计文章：
-
 ## Day 3 - Snow Flake
 
 题目叫做雪花，代码如下：
@@ -12,7 +6,9 @@
 
 **漏洞解析** ：
 
-这段代码中存在两个安全漏洞。第一个是文件包含漏洞，上图第8行中使用了 **class_exists()** 函数来判断用户传过来的控制器是否存在，默认情况下，如果程序存在 **__autoload** 函数，那么在使用 **class_exists()** 函数就会自动调用本程序中的 **__autoload** 函数，这题的文件包含漏洞就出现在这个地方。攻击者可以使用 **路径穿越** 来包含任意文件，当然使用路径穿越符号的前提是 **PHP5~5.3(包含5.3版本)版本** 之间才可以。例如类名为： **../../../../etc/passwd** 的查找，将查看passwd文件内容，我们来看一下PHP手册对 **class_exists()** 函数的定义：
+这段代码中存在两个安全漏洞。第一个是文件包含漏洞，上图第8行中使用了 **class_exists()** 函数来判断用户传过来的控制器是否存在，默认情况下，如果程序存在 **__autoload** 函数，那么在使用 **class_exists()** 函数就会自动调用本程序中的 **__autoload** 函数，这题的文件包含漏洞就出现在这个地方。
+
+攻击者可以使用 **路径穿越** 来包含任意文件，当然使用路径穿越符号的前提是 **PHP5~5.3(包含5.3版本)版本**之间才可以。例如类名为： **../../../../etc/passwd** 的查找，将查看 passwd 文件内容，我们来看一下 PHP 手册对 **class_exists()** 函数的定义：
 
 >[ class_exists ](http://php.net/manual/zh/function.class-exists.php) ：(PHP 4, PHP 5, PHP 7)
 >
@@ -22,32 +18,34 @@
 >
 >**$class_name** 为类的名字，在匹配的时候不区分大小写。默认情况下 **$autoload** 为 **true** ，当 **$autoload** 为 **true** 时，会自动加载本程序中的 **__autoload** 函数；当 **$autoload** 为 **false** 时，则不调用 **__autoload** 函数。
 
-我们再来说说第二个漏洞。在上图第9行中，我们发现实例化类的类名和传入类的参数均在用户的控制之下。攻击者可以通过该漏洞，调用PHP代码库的任意构造函数。即使代码本身不包含易受攻击的构造函数，我们也可以使用PHP的内置类 **SimpleXMLElement** 来进行 **XXE** 攻击，进而读取目标文件的内容，甚至命令执行（前提是安装了PHP拓展插件expect），我们来看一下PHP手册对 **SimpleXMLElement** 类的定义：
+
+
+我们再来说说第二个漏洞。在上图第 9 行中，我们发现实例化类的类名和传入类的参数均在用户的控制之下。攻击者可以通过该漏洞，调用 PHP 代码库的任意构造函数。即使代码本身不包含易受攻击的构造函数，我们也可以使用 PHP 的内置类 **SimpleXMLElement** 来进行 **XXE** 攻击，进而读取目标文件的内容，甚至命令执行（前提是安装了 PHP 拓展插件 expect ），我们来看一下 PHP 手册对 **SimpleXMLElement** 类的定义：
 
 >[SimpleXMLElement](http://php.net/manual/zh/class.simplexmlelement.php) ：(PHP 5, PHP 7)
 >
->**功能** ：用来表示XML文档中的元素，为PHP的内置类。
+>**功能** ：用来表示 XML 文档中的元素，为 PHP 的内置类。
 
 关于 **SimpleXMLElement** 导致的XXE攻击，下面再给出一个demo案例，方便大家理解：
 
 ![2](2.png)
 
-# 实例分析-Shopware 5.3.3
+## 实例分析-Shopware 5.3.3
 
-## 框架介绍
+### 框架介绍
 
 > 官方文档：https://developers.shopware.com/developers-guide/
 
 最好还是花一些时间读一下官方开发文档，了解一下各个目录的作用。
 
 - engine/Shopware 目录是实际的 Shopware 应用程序，里面有捆绑包、服务、模块等。
-- themes 目录是shopware5的模板库
+- themes 目录是 shopware5 的模板库
 
 Shopware 使用 MVC 设计模式。出于这个原因，应用程序的表示方面（view）、控制和用户输入（controller）以及数据层和业务逻辑（model）在整个应用程序中是分离的。
 
-- view：使用Smarty模板引擎， 可以在themes目录中找到所有模板
-- model：模型在engine/Shopware/Models目录下，模型根据领域分组。因此您可以在文章目录中找到与产品相关的模型，在客户目录中找到与客户相关的模型，等等。 Shopware 的业务逻辑可以在 Core、Components 或 Bundle 中找到——这取决于所讨论的服务与 Shopware 本身耦合的紧密程度。
-- controller：控制器层在engine/Shopware/Controllers目录下，根据模块划分不同的控制器。有以下四个不同的模块：
+- view：使用 Smarty 模板引擎， 可以在 themes 目录中找到所有模板
+- model：模型在 engine/Shopware/Models 目录下，模型根据领域分组。因此您可以在文章目录中找到与产品相关的 model，在客户目录中找到与客户相关的 model，等等。
+- controller：控制器层在 engine/Shopware/Controllers 目录下，根据模块划分不同的控制器。有以下四个不同的模块：
 - frontend (default)
 - widgets (for our ESI system)
 - backend (for the Shopware administrative panel)
@@ -59,13 +57,11 @@ Shopware 使用 MVC 设计模式。出于这个原因，应用程序的表示方
 - 请求哪个控制器，默认是 Index
 - 请求哪个控制器的操作，默认是 index
 
-如果未明确定义模块、控制器或操作，Shopware 将回退到上述默认值。因此，对Shopware根目录的调用将被分派到 frontend 模块、Index 控制器和 index 操作。这相当于调用 http://my-shop.com/frontend/index/index。然而，在实践中，这些“技术”URL 通常被 SEO 引擎隐藏。
+如果未明确定义模块、控制器或操作，Shopware 将回退到上述默认值。因此，对 Shopware 根目录的调用将被分派到 frontend 模块、Index 控制器和 index 操作。这相当于调用 http://my-shop.com/frontend/index/index。然而，在实践中，这些“技术”URL 通常被 SEO 引擎隐藏。
 
-## 漏洞分析
+### 漏洞分析
 
-本次实例分析，我们选取的是 **Shopware 5.3.3** 版本，对 **SimpleXMLElement** 类导致的 **XXE漏洞** 进行分析，而 **class_exists()** 函数，我们将会在本次给出的CTF题目中深入讨论。
-
-
+本次实例分析，我们选取的是 **Shopware 5.3.3** 版本，对 **SimpleXMLElement** 类导致的 **XXE漏洞** 进行分析，而 **class_exists()** 函数，我们将会在本次给出的 CTF 题目中深入讨论。
 
 我们来看一下本次漏洞的文件，在 **engine\Shopware\Controllers\Backend\ProductStream.php** 文件中有一个 **loadPreviewAction** 方法，其作用是用来预览产品流的详细信息，具体代码如下：
 
@@ -85,9 +81,9 @@ Shopware 使用 MVC 设计模式。出于这个原因，应用程序的表示方
 
 这里我们关注 **第6行** 代码，这里创建了一个反射类，而类的名称就是从 **$sort** 变量来的，可被用户控制利用。继续往下看，在代码第28行处用 **$newParams** 作为参数，创建一个新的实例对象。而这里的  **$newParams** 是从 **$arguments[\$paramName]** 中取值的， **$arguments** 又是我们可以控制的，因为也是从 **$sort** 变量来，所以我们可以通过这里来实例化一个 **SimpleXMLElement** 类对象，形成一个XXE漏洞。下面，我们来看看具体如何利用这个漏洞。
 
-## 漏洞利用
+### 漏洞利用
 
-### 环境搭建
+#### 环境搭建
 
 - php5.6.9
 - mysql5.5.29
@@ -126,7 +122,7 @@ Shopware 使用 MVC 设计模式。出于这个原因，应用程序的表示方
 
 
 
-### 实操
+#### 实操
 
 首先，我们需要登录后台，找到调用 **loadPreviewAction** 接口的位置，发现其调用位置如下：
 
@@ -168,7 +164,7 @@ final public SimpleXMLElement::__construct ( string $data [, int $options = 0 [,
 
 ![8](8.png)
 
-## 修复建议
+### 修复建议
 
 关于PHP中XXE漏洞的修复，我们可以过滤关键词，如： **ENTITY** 、 **SYSTEM** 等，另外，我们还可以通过禁止加载XML实体对象的方式，来防止XXE漏洞（如下图第2行代码），具体代码如下：
 

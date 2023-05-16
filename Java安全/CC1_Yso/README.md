@@ -1,5 +1,3 @@
-###### tags: `Java 反序列化`
-[TOC]
 # Java 反序列化之 CC1
 <!--toc-->
 这一篇还是记录一下 ysoserial 的正版 CC1，在看这篇文章之前需要先学习动态代理相关知识。
@@ -39,7 +37,7 @@ factory 是 LazyMap 的一个受保护的成员变量，同时 LazyMap 的 `deco
 
  由于 LazyMap 的构造函数作用域为 `private`，所以无法直接获取，而 `decorate` 方法里面能够 new 一个 `LazyMap` 对象，于是我们构造如下的 EXP，来证明这条链子是可行的。
 
-```java=
+```java
 package org.example;
 import org.apache.commons.collections.functors.InvokerTransformer;
 import org.apache.commons.collections.map.LazyMap;
@@ -97,7 +95,7 @@ public class Main {
 
 直接上我们的 EXP
 
-```java=
+```java
 package org.example;
 import org.apache.commons.collections.Transformer;
 import org.apache.commons.collections.functors.ChainedTransformer;

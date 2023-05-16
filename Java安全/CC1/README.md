@@ -1,12 +1,10 @@
-###### tags: `Java 反序列化`
-[TOC]
 # Java 反序列化第 4 篇-CC1 国内版
 <!--toc-->
 这一篇分析 Java 反序列化 CommonsCollections 的 CC1 链。
 <!--more-->
 
 ## 一. 前言
-感觉国内版的 CC1 和正版 CC1 相比，还是正版 CC1 优雅一些。
+- 感觉国内版的 CC1 和正版 CC1 相比，还是正版 CC1 优雅一些。
 
 关于 Common-Collections 的介绍可以直接看[闪烁之狐](https://blinkfox.github.io/2018/09/13/hou-duan/java/commons/commons-collections-bao-he-jian-jie/)大佬。
 

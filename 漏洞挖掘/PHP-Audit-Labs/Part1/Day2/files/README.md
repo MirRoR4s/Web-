@@ -1,12 +1,12 @@
 ## Day 2 - Twig
 
-题目叫做Twig，代码如下：
+题目叫做 Twig，代码如下：
 
 ![1](1.png)
 
 **漏洞解析** ：
 
-这一关题目实际上用的是PHP的一个模板引擎 [Twig](https://twig.symfony.com/) ，本题考察XSS(跨站脚本攻击)漏洞。虽然题目代码分别用了 **escape** 和 **filter_var** 两个过滤方法，但是还是可以被攻击者绕过。在上图 **第8行** 中，程序使用 [Twig](https://twig.symfony.com/) 模板引擎定义的 **escape** 过滤器来过滤link，而实际上这里的 **escape** 过滤器，是用PHP内置函数 **htmlspecialchars** 来实现的，具体可以点击 [这里](https://twig.symfony.com/doc/2.x/filters/escape.html) 了解 **escape** 过滤器， **htmlspecialchars** 函数定义如下：
+这一关题目实际上用的是PHP的一个模板引擎 [Twig](https://twig.symfony.com/) ，本题考察 XSS (跨站脚本攻击) 漏洞。虽然题目代码分别用了 **escape** 和 **filter_var** 两个过滤方法，但是还是可以被攻击者绕过。在上图 **第8行** 中，程序使用 [Twig](https://twig.symfony.com/) 模板引擎定义的 **escape** 过滤器来过滤 link ，而实际上这里的 **escape** 过滤器，是用PHP内置函数 **htmlspecialchars** 来实现的，具体可以点击 [这里](https://twig.symfony.com/doc/2.x/filters/escape.html) 了解 **escape** 过滤器， **htmlspecialchars** 函数定义如下：
 
 > [ **htmlspecialchars** ](http://php.net/manual/zh/function.htmlspecialchars.php) ：(PHP 4, PHP 5, PHP 7)
 >
@@ -30,6 +30,8 @@
 >
 >**定义** ：[mixed](http://php.net/manual/zh/language.pseudo-types.php#language.types.mixed) **filter_var** ( [mixed](http://php.net/manual/zh/language.pseudo-types.php#language.types.mixed) `$variable` [, int `$filter` = FILTER_DEFAULT [, [mixed](http://php.net/manual/zh/language.pseudo-types.php#language.types.mixed) `$options` ]] )
 
+> **FILTER_VALIDATE_URL** 过滤器是如何判断一个 url 是否合法呢？这是一个好问题.....
+
 针对这两处的过滤，我们可以考虑使用 **javascript伪协议** 来绕过。为了让大家更好理解，请看下面的demo代码：
 
 ![2](2.png)
@@ -38,19 +40,19 @@
 
 ![3](3.png)
 
-实际上，这里的 **//** 在JavaScript中表示单行注释，所以后面的内容均为注释，那为什么会执行 **alert** 函数呢？那是因为我们这里用了字符 **%0a** ，该字符为换行符，所以 **alert** 语句与注释符 **//** 就不在同一行，就能执行。当然，这里我们要对 **%** 百分号编码成 **%25** ，因为程序将浏览器发来的payload：`javascript://comment％250aalert(1)` 先解码成： `javascript://comment%0aalert(1)` 存储在变量 **$url** 中（上图第二行代码），然后用户点击a标签链接就会触发 **alert** 函数。
+实际上，这里的 **//** 在 JavaScript 中表示单行注释，所以后面的内容均为注释，那为什么会执行 **alert** 函数呢？那是因为我们这里用了字符 **%0a** ，该字符为换行符，所以 **alert** 语句与注释符 **//** 就不在同一行，就能执行。当然，这里我们要对 **%** 百分号编码成 **%25** ，因为程序将浏览器发来的payload：`javascript://comment％250aalert(1)` 先解码成： `javascript://comment%0aalert(1)` 存储在变量 **$url** 中（上图第二行代码），然后用户点击 a 标签链接就会触发 **alert** 函数。
 
-## 实例分析
+## 实例分析-Anchor 0.9.2 XSS 漏洞
 
 本次实例分析，我们选取的是 **Anchor 0.9.2** 版本。
 
-> 关于该CMS的介绍可以参看[官方文档](http://anchorcms.com/docs/theming/introduction/)。
+> 关于该 CMS 的介绍可以参看[官方文档](http://anchorcms.com/docs/theming/introduction/)。
 
-在该版本中，当用户访问一个不存在的URL链接时，程序会调用404模板，而这个模板则存在XSS漏洞，具体代码如下：
+在该版本中，当用户访问一个不存在的URL链接时，程序会调用 404 模板，而这个模板则存在 XSS 漏洞，具体代码如下：
 
 ![4](4.png)
 
-该代码在 **themes\default\404.php** 中，看第4行 **code** 标签中的 **current_url** 函数，我们可在 **anchor\functions\helpers.php** 文件中，看到 **current_url** 函数是由 **Uri** 类的  **current** 方法实现的，具体代码如下：
+该代码在 **themes\default\404.php** 中，看第4行 **code** 标签中的 **current_url()** 函数，我们可在 **anchor\functions\helpers.php** 文件中看到 **current_url** 函数是由 **Uri** 类的  **current** 方法实现的，具体代码如下：
 
 ```php
 function current_url() {
@@ -66,24 +68,22 @@ function current_url() {
 
 ![6](6.png)
 
-我们跟进 **static::format** 方法，可以发现程序过滤了三次(下图第3-7行)，但是都没有针对XSS攻击进行过滤，只是为了获取用户访问的文件名，具体代码如下：
+我们跟进 **static::format** 方法，可以发现程序过滤了三次(下图第 3-7 行)，但是都没有针对 XSS 攻击进行过滤，只是为了获取用户访问的文件名，具体代码如下：
 
 ![7](7.png)
 
 ![image-20230417200906958](image-20230417200906958.png)
 
-由于没有针对XSS攻击进行过滤，导致攻击十分容易，我们来看看XSS攻击具体是如何进行的。
-
-## 漏洞利用
+由于没有针对 XSS 攻击进行过滤，导致攻击十分容易，我们来看看 XSS 攻击具体是如何进行的。
 
 ### 环境搭建
 
-- php5.4.45
-- apache2.4.39
-- MySQL5.5.29
-- 先在本地搭建一个名为anchor的数据库
+- php 5.4.45
+- apache 2.4.39
+- MySQL 5.5.29
+- 先在本地搭建一个名为 anchor 的数据库
 - 管理员账号密码 admin admin123
-- ```
+- ```http
   127.0.0.1:800/PHP_Audit/RedSun/DAY2/anchor-cms-0.9.2/index.php
   ```
 
@@ -111,24 +111,24 @@ function current_url() {
 
 ### Anchor 结构
 
-一直有一个问题，该cms是如何实现访问不存在的路径就会调用404模板的呢？
+一直有一个问题，该 cms 是如何实现访问不存在的路径就会调用404模板的呢？
 
 - 入口文件：根目录下的 index.php
 - 
 
 
 
-### 实操
+### 漏洞利用
 
-其实最难的地方在于漏洞的入口点在什么地方？如何能让代码进入404.php？这个最核心的问题红日没有给出来，我想这也是大家都不秘传的诀窍。
+其实最难的地方在于漏洞的入口点在什么地方？如何能让代码进入 404.php ？这个最核心的问题红日没有给出来，我想这也是大家都不秘传的诀窍。
 
 ![image-20230417210456476](image-20230417210456476.png)
 
-我们构造payload如下：  `http://localhost/anchor/index.php/<script>alert('www.sec-redclub.com')</script>` 。根据上面的分析，当我们访问这个并不存在的链接时，程序会调用404模板页面，然后调用 **current_url** 函数来获取当前用户访问的文件名，也就是最后一个 **/** 符号后面的内容，所以最终payload里的 `<script>alert('www.sec-redclub.com')</script>` 部分会嵌入到 `<code>` 标签中，造成XSS攻击，效果图如下：
+我们构造payload如下：  `http://localhost/anchor/index.php/<script>alert('www.sec-redclub.com')</script>` 。根据上面的分析，当我们访问这个并不存在的链接时，程序会调用404模板页面，然后调用 **current_url** 函数来获取当前用户访问的文件名，也就是最后一个 **/** 符号后面的内容，所以最终payload里的 `<script>alert('www.sec-redclub.com')</script>` 部分会嵌入到 `<code>` 标签中，造成 XSS 攻击，效果图如下：
 
 ![8](8.png)
 
-## 修复建议
+### 修复建议
 
 这对XSS漏洞，我们最好就是过滤关键词，将特殊字符进行HTML实体编码替换，这里给出的修复代码为Dedecms中防御XSS的方法，大家可以在 **uploads/include/helpers/filter.helper.php** 路径下找到对应代码，具体防护代码如下：
 
