@@ -1,0 +1,2 @@
+# Information disclosure vulnerabilities
+
